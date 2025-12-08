@@ -21,22 +21,31 @@ const taskSchema = z.object({
   }),
 })
 
-app.post('/tasks', (req, res) => {
+app.post('/tasks', (req, res, next) => {
   try {
     const validatedTask = taskSchema.parse(req.body)
+    // For now, respond immediately
     res.status(201).json({
       message: 'Task validated successfully',
       task: validatedTask,
     })
   } catch (err) {
-    if (err instanceof z.ZodError) {
-      return res.status(400).json({
-        message: 'Validation failed',
-        errors: err.errors,
-      })
-    }
-    res.status(500).json({ message: 'Internal server error' })
+    next(err) // Pass error to error handling middleware
   }
+})
+
+app.use((err, req, res, next) => {
+  if (err instanceof z.ZodError) {
+    return res.status(400).json({
+      message: 'Validation failed',
+      errors: err.errors,
+    })
+  }
+  console.error(err) // Log unexpected errors for debugging
+
+  res.status(500).json({
+    message: 'Internal server error',
+  })
 })
 
 const PORT = process.env.PORT || 3000
