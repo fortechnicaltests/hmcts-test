@@ -1,10 +1,16 @@
 import express from 'express'
 import cors from 'cors'
 import { z } from 'zod'
-import { PrismaClient } from '@prisma/client'
+import 'dotenv/config'
+import { PrismaClient } from '../generated/client/index.js'
+import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3'
 
 const app = express()
-const prisma = new PrismaClient()
+
+const url = `${process.env.DATABASE_URL}`
+
+const adapter = new PrismaBetterSqlite3({ url })
+const prisma = new PrismaClient({ adapter })
 
 app.use(express.json())
 app.use(cors())
@@ -14,12 +20,31 @@ app.get('/', (req, res) => {
 })
 
 const taskSchema = z.object({
-  title: z.string().min(1, 'Title is required'),
+  title: z
+    .string({
+      required_error: 'Title is required',
+      invalid_type_error: 'Title must be a string',
+    })
+    .nonempty('Title cannot be empty'),
+
+  status: z
+    .string({
+      required_error: 'Status is required',
+      invalid_type_error: 'Status must be a string',
+    })
+    .nonempty('Status cannot be empty'),
+
+  dueDate: z
+    .string({
+      required_error: 'Due date is required',
+      invalid_type_error: 'Due date must be a string',
+    })
+    .nonempty('Due date cannot be empty')
+    .refine((date) => !isNaN(Date.parse(date)), {
+      message: 'Due date must be a valid date string',
+    }),
+
   description: z.string().optional(),
-  status: z.string().min(1, 'Status is required'),
-  dueDate: z.string().refine((date) => !isNaN(Date.parse(date)), {
-    message: 'Due date must be a valid date string',
-  }),
 })
 
 app.post('/tasks', async (req, res, next) => {
@@ -46,7 +71,7 @@ app.use((err, req, res, next) => {
   if (err instanceof z.ZodError) {
     return res.status(400).json({
       message: 'Validation failed',
-      errors: err.errors,
+      errors: err.issues,
     })
   }
   console.error(err)
