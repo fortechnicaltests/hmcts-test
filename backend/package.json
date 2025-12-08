@@ -11,12 +11,13 @@
     "@prisma/client": "^7.1.0",
     "cors": "^2.8.5",
     "express": "^5.2.1",
-    "prisma": "^7.1.0",
     "zod": "^4.1.13"
   },
   "devDependencies": {
+    "dotenv": "^17.2.3",
     "jest": "^30.2.0",
     "nodemon": "^3.1.11",
+    "prisma": "^7.1.0",
     "supertest": "^7.1.4",
     "ts-node": "^10.9.2"
   }
