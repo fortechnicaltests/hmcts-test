@@ -1,11 +1,12 @@
 import express from 'express'
 import cors from 'cors'
 import { z } from 'zod'
+import { PrismaClient } from '@prisma/client'
 
 const app = express()
+const prisma = new PrismaClient()
 
 app.use(express.json())
-
 app.use(cors())
 
 app.get('/', (req, res) => {
@@ -21,16 +22,24 @@ const taskSchema = z.object({
   }),
 })
 
-app.post('/tasks', (req, res, next) => {
+app.post('/tasks', async (req, res, next) => {
   try {
     const validatedTask = taskSchema.parse(req.body)
-    // For now, respond immediately
+    const createdTask = await prisma.task.create({
+      data: {
+        title: validatedTask.title,
+        description: validatedTask.description || null,
+        status: validatedTask.status,
+        dueDate: new Date(validatedTask.dueDate),
+      },
+    })
+
     res.status(201).json({
-      message: 'Task validated successfully',
-      task: validatedTask,
+      message: 'Task created successfully',
+      task: createdTask,
     })
   } catch (err) {
-    next(err) // Pass error to error handling middleware
+    next(err)
   }
 })
 
@@ -41,7 +50,7 @@ app.use((err, req, res, next) => {
       errors: err.errors,
     })
   }
-  console.error(err) // Log unexpected errors for debugging
+  console.error(err)
 
   res.status(500).json({
     message: 'Internal server error',
