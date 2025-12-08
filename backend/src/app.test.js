@@ -31,10 +31,7 @@ describe('POST /tasks', () => {
 })
 describe('POST /tasks - Validation tests', () => {
   it('should fail when required fields are missing', async () => {
-    const res = await request(app)
-      .post('/tasks')
-      .send({})
-      .expect(400)
+    const res = await request(app).post('/tasks').send({}).expect(400)
 
     expect(res.body.message).toBe('Validation failed')
     expect(res.body.errors).toEqual(
@@ -57,9 +54,9 @@ describe('POST /tasks - Validation tests', () => {
 
   it('should fail when fields have wrong types', async () => {
     const invalidPayload = {
-      title: 123, 
-      status: true, 
-      dueDate: 20251231, 
+      title: 123,
+      status: true,
+      dueDate: 20251231,
       description: 456,
     }
 
@@ -85,5 +82,25 @@ describe('POST /tasks - Validation tests', () => {
         }),
       ])
     )
+  })
+  it('should return 400 and validation errors when required fields are missing', async () => {
+    const incompleteTask = {
+      title: 'Incomplete Task',
+      // status and dueDate are missing
+    }
+
+    const response = await request(app)
+      .post('/tasks')
+      .send(incompleteTask)
+      .expect('Content-Type', /json/)
+      .expect(400)
+
+    expect(response.body.message).toBe('Validation failed')
+    expect(Array.isArray(response.body.errors)).toBe(true)
+
+    // Check that errors mention missing status and dueDate
+    const errorFields = response.body.errors.map((e) => e.path[0])
+    expect(errorFields).toContain('status')
+    expect(errorFields).toContain('dueDate')
   })
 })
