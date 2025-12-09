@@ -44,7 +44,7 @@ const taskSchema = z.object({
       message: 'Due date must be a valid date string',
     }),
 
-  description: z.string().optional(),
+  description: z.string().nullable().optional(),
 })
 
 app.post('/tasks', async (req, res, next) => {
